@@ -1,13 +1,48 @@
+
 import React, { useEffect, useState } from 'react';
 import './App.css';
 import data from './assets/dummty-products-data.json';
+import categoriesData from './assets/categories.json';
 
 function App() {
   const [products, setProducts] = useState([]);
+  const [filtered, setFiltered] = useState([]);
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
+  const [status, setStatus] = useState('');
+  const [price, setPrice] = useState('');
 
   useEffect(() => {
     setProducts(data.products);
+    setFiltered(data.products);
   }, []);
+
+  useEffect(() => {
+    let temp = [...products];
+
+    if (search) {
+      temp = temp.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
+    }
+
+    if (category) {
+      temp = temp.filter(p => p.category === category);
+    }
+
+    if (status) {
+      if (status === 'out') {
+        temp = temp.filter(p => p.stock === 0);
+      } else {
+        temp = temp.filter(p => p.availabilityStatus.toLowerCase().includes(status));
+      }
+    }
+
+    if (price) {
+      const [min, max] = price.split('-').map(Number);
+      temp = temp.filter(p => p.price >= min && p.price <= max);
+    }
+
+    setFiltered(temp);
+  }, [search, category, status, price, products]);
 
   return (
     <div className="app">
@@ -36,9 +71,31 @@ function App() {
           <button className="add-btn">+ Add Product</button>
         </div>
         <div className="filters">
-          <select><option>All Categories</option></select>
-          <select><option>All Status</option></select>
-          <select><option>$0 - $100</option></select>
+          <input
+            type="text"
+            placeholder="Search Product"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <select onChange={e => setCategory(e.target.value)} value={category}>
+            <option value="">All Categories</option>
+            {categoriesData.map(c => (
+              <option key={c.slug} value={c.slug}>{c.name}</option>
+            ))}
+          </select>
+          <select onChange={e => setStatus(e.target.value)} value={status}>
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+            <option value="out">Out of Stock</option>
+          </select>
+          <select onChange={e => setPrice(e.target.value)} value={price}>
+            <option value="">All Prices</option>
+            <option value="0-20">$0 - $20</option>
+            <option value="21-50">$21 - $50</option>
+            <option value="51-100">$51 - $100</option>
+            <option value="101-1000">$101+</option>
+          </select>
         </div>
         <table>
           <thead>
@@ -52,7 +109,7 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {products.map((product) => (
+            {filtered.map((product) => (
               <tr key={product.id}>
                 <td className="product-info">
                   <img src={product.thumbnail} alt={product.title} />
